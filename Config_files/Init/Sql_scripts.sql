@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `data` (
   `tm` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `service` varchar(50) NOT NULL,
   `account` varchar(50) NOT NULL,
+  `IV` binary(16) NOT NULL,
   INDEX(DataID),
   PRIMARY KEY (UserID, DataID),
   FOREIGN KEY (UserID) REFERENCES user(ID)
