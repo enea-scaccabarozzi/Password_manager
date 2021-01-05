@@ -28,6 +28,7 @@ ges_pwd::ges_pwd()
 
 int ges_pwd::login(const char* username, const char* pwd) 
 {
+	std::string encoded_pwd = SHA_256(pwd);
 	std::string query;
 	query = "SELECT ID FROM user WHERE UserName = '" + std::string(username) + "';";
 	
@@ -44,7 +45,7 @@ int ges_pwd::login(const char* username, const char* pwd)
 		return -1;
 	}
 		
-	query = "SELECT ID FROM user WHERE pwd = '" + std::string(pwd) + "';";
+	query = "SELECT ID FROM user WHERE pwd = '" + encoded_pwd + "';";
 	if (mysql_query(conn, query.c_str()))
 	{
 		fprintf(stderr, "%s\n", mysql_error(conn));
@@ -68,6 +69,7 @@ int ges_pwd::login(const char* username, const char* pwd)
 
 int ges_pwd::create_account(const char* mail, const char* username, const char* pwd )
 {
+	std::string encoded_pwd(SHA_256(pwd));
 	std::string query = "SELECT ID FROM user WHERE UserMail = '" + std::string(mail) + "'";
 	if (mysql_query(conn, query.c_str()))
 	{
@@ -100,7 +102,7 @@ int ges_pwd::create_account(const char* mail, const char* username, const char* 
 	query += "VALUES (";
 	query += "'" + std::string(username) + "', ";
 	query += "'" + std::string(mail) + "', ";
-	query += "'" + std::string(pwd) + "' ";
+	query += "'" + encoded_pwd + "' ";
 	query += ");";
 	if (mysql_query(conn, query.c_str()))
 	{
@@ -127,7 +129,14 @@ int ges_pwd::logout()
 	}
 	MYSQL_RES* result = mysql_store_result(conn);
 	MYSQL_ROW row = mysql_fetch_row(result);
-	std::string ind = row[0];
+	std::string ind;
+	if (mysql_fetch_row(result) != NULL)
+	{
+		std::string ind = row[0];
+	}
+	else{
+		ind = "1";
+	}
 	mysql_free_result(result);
 
 	query = "ALTER TABLE data AUTO_INCREMENT = " + ind;

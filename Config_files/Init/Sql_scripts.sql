@@ -1,7 +1,4 @@
-/*-------CREATE DATABASE-------*/
-CREATE DATABASE IF NOT EXISTS Password_manager;
 use Password_manager;
-
 
 /*------CREATE TABLE USER------*/
 

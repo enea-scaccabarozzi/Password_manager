@@ -141,11 +141,12 @@ void login()
 
 int secondo_fattore() 
 {
+	cout<<"We are sending you an email at "<<string(gestore.get_user_mail())<< endl;
 	srand(unsigned(time(NULL)));
 	int code= rand()%9999+1;
 	string mail = gestore.get_user_mail();
 	string content;
-	content = "Your temporary access code is: " + code;
+	content = "Your temporary access code is: " + to_string(code);
 	content += "/n If you haven't tried to acces at this service please consider to change your password account or simply ignore this mail";
 	int res = send_mail(mail.c_str(),"Password Manager: access code", content.c_str());
 	if(res != 0)
