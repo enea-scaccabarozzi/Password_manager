@@ -10,10 +10,15 @@
 #include <cryptopp/hex.h>
 #include <iostream>
 
+
 std::string SHA_256(const char* str);
 
-std::string AES(const char* str, const char* key);
-std::string AES(const char* str);
+std::string AES_enc(const char* str, const char* in_key, std::string &in_iv);
+std::string AES_dec(const char* str, const char* in_key, std::string &in_iv);
+std::string AES_enc(const char* str, std::string &in_iv);
+std::string AES_dec(const char* str, std::string &in_iv);
+
+std::string random_str(const int len, int seed);
 
 
 #endif //CRYPTO_LIB_FLAG

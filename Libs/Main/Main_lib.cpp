@@ -116,8 +116,8 @@ int ges_pwd::create_account(const char* mail, const char* username, const char* 
 
 int ges_pwd::logout() 
 {
-	std::string INS_query = "INSERT INTO data(UserID, pwd, tm, service, account) VALUES(";
-	std::string SEL_query = "SELECT pwd, tm, service, account FROM current_data WHERE bool = 0";
+	std::string INS_query = "INSERT INTO data(UserID, pwd, tm, service, account, IV) VALUES(";
+	std::string SEL_query = "SELECT pwd, tm, service, account, IV FROM current_data WHERE bool = 0";
 	
 	std::string query="SELECT MAX(DataID) FROM data";
 	if (mysql_query(conn, query.c_str()))
@@ -160,8 +160,9 @@ int ges_pwd::logout()
 	while ((row = mysql_fetch_row(result)))
 	{
 		query = INS_query + "'" + UserID + "', "
-						  + "'" + row[0]      + "', " + "'" + row[1] + "', "
-						  + "'" + row[2]      + "', " + "'" + row[3] + "'); ";
+						  + "'" + row[0] + "', " + "'" + row[1] + "', "
+						  + "'" + row[2] + "', " + "'" + row[3] + "', "
+						  + "'" + row[4] + "');";
 	
 		if (mysql_query(conn, query.c_str()))
 		{
@@ -187,13 +188,17 @@ int ges_pwd::logout()
 
 int ges_pwd::insert_element(const char* service, const char* account, const char* pwd)
 {
+	std::string iv;
+	std::string encoded_pwd = AES_enc(pwd, iv);
+
 	std::string query;
-	
-	query = "INSERT INTO current_data (pwd, service, account, bool, accountID) ";
-	query += "VALUES('" + std::string(pwd) + "', '"
+	query = "INSERT INTO current_data (pwd, service, account, IV, bool, accountID) ";
+	query += "VALUES('" + encoded_pwd + "', '"
 						+ std::string(service, strlen(service)) + "', '"
-						+ std::string(account, strlen(account)) + "', '0', '"
+						+ std::string(account, strlen(account)) + "', '"
+						+ iv + "', '0', '"
 						+ UserID + "');";
+
 	if (mysql_query(conn, query.c_str()))
 	{
 		fprintf(stderr, "%s\n", mysql_error(conn));
@@ -215,11 +220,10 @@ int ges_pwd::search_element(const char* input, char flag1, int flag2)
 	{
 		return -1;
 	}
-		
 	std::string query;
 	if (flag2 == 0) 
 	{
-		query = "SELECT service, pwd, account, tm FROM current_data WHERE( accountID = "+ std::string(UserID) +" AND ";
+		query = "SELECT service, pwd, account, tm, IV, FROM current_data WHERE( accountID = "+ std::string(UserID) +" AND ";
 		if (flag1 == 'S')
 		{
 			query += "service = '" + std::string(input,strlen(input)) + "');";
@@ -232,7 +236,7 @@ int ges_pwd::search_element(const char* input, char flag1, int flag2)
 	}
 	else 
 	{
-		query = "SELECT service, pwd, account, tm FROM current_data WHERE( accountID = " + std::string(UserID) + " AND ";
+		query = "SELECT service, pwd, account, tm, IV FROM current_data WHERE( accountID = " + std::string(UserID) + " AND ";
 		if (flag1 == 'S')
 		{
 			query += "service LIKE '%" + std::string(input, strlen(input)) + "%');";
@@ -307,13 +311,13 @@ int ges_pwd::print_elements(char flag/* = 'N'*/)
 	std::string query;
 	switch (flag) {
 	case 'N':
-		query = "SELECT service, pwd, account, tm FROM current_data WHERE accountID = " + std::string(UserID);
+		query = "SELECT service, pwd, account, tm, IV FROM current_data WHERE accountID = " + std::string(UserID);
 		break;
 	case 'C':
-		query= "SELECT service, pwd, account, tm FROM current_data WHERE accountID = " + std::string(UserID) + " ORDER BY service ASC;";
+		query= "SELECT service, pwd, account, tm, IV FROM current_data WHERE accountID = " + std::string(UserID) + " ORDER BY service ASC;";
 		break;
 	case 'D':
-		query= "SELECT service, pwd, account, tm FROM current_data WHERE accountID = " + std::string(UserID) + " ORDER BY service DESC;";
+		query= "SELECT service, pwd, account, tm, IV FROM current_data WHERE accountID = " + std::string(UserID) + " ORDER BY service DESC;";
 		break;
 	default:
 		return -1;
@@ -358,8 +362,8 @@ int ges_pwd::initialize_current_data()
 		mysql_close(conn);
 		return -1;
 	}
-	std::string SEL_query = "SELECT pwd, tm, service, account, UserID FROM data WHERE UserID=" + std::string(UserID) + ";";
-	std::string INS_query = "INSERT INTO current_data (pwd, tm, service, account, accountID) ";
+	std::string SEL_query = "SELECT pwd, tm, service, account, UserID, IV FROM data WHERE UserID=" + std::string(UserID) + ";";
+	std::string INS_query = "INSERT INTO current_data (pwd, tm, service, account, accountID, IV) ";
 	query = INS_query + SEL_query;
 	if (mysql_query(conn, query.c_str()))
 	{
@@ -394,6 +398,10 @@ int ges_pwd::print_result(const char* IN_query) {
 	}
 	MYSQL_RES* result = mysql_store_result(conn);
 	MYSQL_ROW row;
+	std::string recovered_pwd;
+	std::string iv_str;
+	std::string iv;
+
 	while ((row = mysql_fetch_row(result))) 
 	{
 		str = row[0];
@@ -401,8 +409,9 @@ int ges_pwd::print_result(const char* IN_query) {
 		{
 			SER_len = str.length();
 		}
-			
-		str = row[1];
+
+		std::string iv_str =row[4];
+		str = AES_dec(row[1], iv_str);
 		if (PWD_len < str.length())
 		{
 			PWD_len = str.length();
@@ -453,7 +462,9 @@ int ges_pwd::print_result(const char* IN_query) {
 	{
 		std::cout << "| ";
 		print_value(row[0], SER_len + 1);
-		print_value(row[1], PWD_len + 1);
+		std::string iv_str = row[4];
+		str = AES_dec(row[1], iv_str);
+		print_value(str.c_str(), PWD_len + 1);
 		print_value(row[2], ACC_len + 1);
 		print_value(row[3], TIM_len + 1);
 		std::cout << std::endl;
