@@ -4,6 +4,7 @@
 
 #include <mariadb/mysql.h>
 #include "../../Config_files/Database.conf.h"
+#include "../Extra/Crypto_lib/Crypto_lib.h"
 
 class ges_pwd 
 {
@@ -24,7 +25,6 @@ private:
 	int print_result(const char* IN_query);
 	void print_line(int dim);
 	void print_value(const char* value, int dim);
-
 };
 
 #endif //GESTIONE_PASSWORD_FLAG

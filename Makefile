@@ -12,10 +12,10 @@ Init_database.o : ./Config_files/Init/Init_database.cpp
 	@echo "[>>]  Compiling Init_database.o .."
 	g++ -c -o Init_database.o ./Config_files/Init/Init_database.cpp $$(mariadb_config --cflags --libs)
 
-Password_manager : Password_manager.o Main_lib.o Input_lib.o Mail_lib.o
+Password_manager : Password_manager.o Main_lib.o Input_lib.o Mail_lib.o Crypto_lib.o
 	@echo "[>>]  Unioning objects file .."
 	@echo "[>>]  Creating Password_manager .."
-	g++ -o Password_manager Password_manager.o Main_lib.o Input_lib.o Mail_lib.o $$(mariadb_config --cflags --libs) -lPocoNet -lPocoFoundation -lPocoNetSSL
+	g++ -o Password_manager Password_manager.o Main_lib.o Input_lib.o Mail_lib.o Crypto_lib.o $$(mariadb_config --cflags --libs) -lPocoNet -lPocoFoundation -lPocoNetSSL -l:libcryptopp.a
 	@echo "[!!]  Deleting objects file .."
 	rm -f *.o
 	@echo "[!!]  Deleting Setup program .."
@@ -37,4 +37,8 @@ Input_lib.o : ./Libs/Extra/Input_lib/Input_lib.cpp ./Libs/Extra/Input_lib/Input_
 Mail_lib.o : ./Libs/Extra/Mail_lib/Mail_lib.cpp ./Libs/Extra/Mail_lib/Mail_lib.h
 	@echo "[>>]  Compiling Mail_lib.o .."
 	g++ -c -o Mail_lib.o ./Libs/Extra/Mail_lib/Mail_lib.cpp -lPocoNet -lPocoFoundation -lPocoNetSSL
+	
+Crypto_lib.o : ./Libs/Extra/Crypto_lib/Crypto_lib.cpp ./Libs/Extra/Crypto_lib/Crypto_lib.h
+	@echo "[>>]  Compiling Crypto_lib.o .."
+	g++ -c -o Crypto_lib.o ./Libs/Extra/Crypto_lib/Crypto_lib.cpp -l:libcryptopp.a
 	

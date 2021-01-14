@@ -41,22 +41,40 @@ int main(){
     else{
         std::cout<<"[DONE]  CREATE the main user\n";
     }
-
-    if(mysql_change_user(connection, DB_USER, DB_PASSWORD, "mysql") != 0){
-        std::cout << "[!!] Error during the db user changing: " << std::endl;
-        fprintf(stderr, "%s\n", mysql_error(connection));
-		mysql_close(connection);
+    if (mysql_query(connection, "CREATE DATABASE IF NOT EXISTS Password_manager;")) 
+	{
+		std::cout << "[!!] Error during the creation of the main database: " << std::endl;
+		fprintf(stderr, "%s\n", mysql_error(connection));
 		std::cin.get();
+		mysql_close(connection);
 		exit(-1);
-    }
+	}
     else{
-        std::cout<<"[DONE]  CHANGED to the main user\n";
+        std::cout<<"[DONE]  CREATE the main database \n";
     }
+    
+    query = "GRANT ALL privileges ON `Password_manager`.* TO '";
+    query += DB_USER;
+    query += "'@";
+    query += HOST_MACHINE;
+    if (mysql_query(connection, query.c_str())) 
+	{
+		std::cout << "[!!] Error during the escalation of the privileges for main user: " << std::endl;
+		fprintf(stderr, "%s\n", mysql_error(connection));
+		std::cin.get();
+		mysql_close(connection);
+		exit(-1);
+	}
+    else{
+        std::cout<<"[DONE]  ESCALATION for main db user\n";
+    }
+    mysql_close(connection);
     query = "mariadb -u ";
     query += DB_USER;
     query += " -p";
     query += DB_PASSWORD;
     query += " < ./Config_files/Init/Sql_scripts.sql";
     system(query.c_str());
+    std::cout << query.c_str() << std::endl;
     std::cout<<"[DONE]  SETTED the database environment for Password_manager\n";
 }
